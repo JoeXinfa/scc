@@ -1,0 +1,49 @@
+
+Compile the project in Windows
+  mkdir build
+  cd build
+  cmake .. -G "Unix Makefiles"
+  make
+  scc/scc.exe
+
+Debug...
+  executables and data are in build/scc
+  cd ..; make; cd scc
+  ./sccf.exe twitter.rgraph
+
+
+Install OpenMP in Windows
+  https://github.com/vijaygarg1/sum20-Parallel-algs/tree/master/assignments/hw1
+  http://www.mathcancer.org/blog/setting-up-a-64-bit-gcc-environment-on-windows/
+    C:\Program Files\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin\
+    C:\Program Files\Notepad++\
+    C:\MinGW\msys\1.0\bin\
+
+Install CMake
+  https://cmake.org/install/
+
+Use cmake on Windows
+  https://stackoverflow.com/a/39643380/7269441
+  Windows, cd build; cmake .. -G "Unix Makefiles"; make
+
+How to use the .sln file?
+  On Windows, CMake generates a MSVC solution by default. Check for a .sln file in your build directory.
+  https://preshing.com/20170511/how-to-build-a-cmake-based-project/
+
+What is cmake and is it used for?
+  https://cmake.org/cmake/help/latest/guide/tutorial/index.html
+  https://en.wikipedia.org/wiki/CMake
+  https://stackoverflow.com/a/12237398/7269441
+    cmake is a Makefile generator.
+
+How to use Microsoft Visual Studio?
+  the .sln file, Solution Explorer, Murach book exercises
+
+Compile the project
+  mkdir build
+  cd build
+  cmake ..
+  make
+
+
+
