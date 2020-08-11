@@ -1,13 +1,4 @@
-#include <fstream>
-#include <iostream>
-#include <list>
-#include <sstream>
-#include <stack>
-#include <string>
-#include <vector>
-#include <ctime>
-
-using namespace std;
+#include "scc_kosaraju.hpp"
 
 vector<vector<int>> read_edges(int n_vertices, istream& in) {
     vector<vector<int>> neighbors(n_vertices, vector<int>());
@@ -94,6 +85,7 @@ list<list<int>> kosaraju(const vector<vector<int>>& neighbors) {
     return components;
 }
 
+/*
 int main(int argc, char const* argv[]) {
     string filename = argv[1];
     ifstream fin(filename);
@@ -114,3 +106,4 @@ int main(int argc, char const* argv[]) {
     fin.close();
     return 0;
 }
+*/

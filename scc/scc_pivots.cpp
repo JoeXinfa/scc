@@ -11,18 +11,18 @@
 
 using namespace std;
 
-void fleischer(vector<int> vertices, vector<unordered_set<int>>& graph_edges_out,
-    vector<unordered_set<int>>& graph_edges_in, vector<vector<int>>& scc);
+void fleischer(vector<int> vertices, vector<unordered_set<int>>& edgesOut,
+    vector<unordered_set<int>>& edgesIn, vector<vector<int>>& scc);
 
 int main(int argc, char* argv[]) {
     string filename = argv[1];
     int n_vertices;
     clock_t begin_time;
 
-    vector<unordered_set<int>> graph_edges_out = read_graph(filename, n_vertices);
+    vector<unordered_set<int>> edgesOut = read_graph(filename, n_vertices);
 
     begin_time = clock();
-    vector<unordered_set<int>> graph_edges_in = reverse_edges(graph_edges_out);
+    vector<unordered_set<int>> edgesIn = reverse_edges(edgesOut);
     std::cout << "Flip time ms: " << float(clock() - begin_time) << endl;
 
     vector<int> vertices;
@@ -32,13 +32,13 @@ int main(int argc, char* argv[]) {
         vertices.push_back(i);
 
     begin_time = clock();
-    vertices = trim(vertices, graph_edges_out, graph_edges_in, scc);
+    vertices = trim(vertices, edgesOut, edgesIn, scc);
     std::cout << "Trim time ms: " << float(clock() - begin_time) << endl;
     std::cout << "Before trim nv: " << n_vertices << endl;
     std::cout << "After trim nv: " << vertices.size() << endl;
 
     begin_time = clock();
-    fleischer(vertices, graph_edges_out, graph_edges_in, scc);
+    fleischer(vertices, edgesOut, edgesIn, scc);
     std::cout << "SCC time ms: " << float(clock() - begin_time) << endl;
 
     string outfn = filename + ".scc";
@@ -46,8 +46,8 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-void fleischer(vector<int> vertices, vector<unordered_set<int>>& graph_edges_out,
-    vector<unordered_set<int>>& graph_edges_in, vector<vector<int>>& scc) {
+void fleischer(vector<int> vertices, vector<unordered_set<int>>& edgesOut,
+    vector<unordered_set<int>>& edgesIn, vector<vector<int>>& scc) {
     if (vertices.size() == 0)
         return;
 
@@ -61,8 +61,8 @@ void fleischer(vector<int> vertices, vector<unordered_set<int>>& graph_edges_out
     for (int i = 0; i < vertices.size(); i++) {
         int pivot = vertices[i];
         if (!scced[pivot]) {
-            unordered_set<int> succ = reach_fw(graph_edges_out, pivot);
-            unordered_set<int> pred = reach_bw(graph_edges_in, pivot);
+            unordered_set<int> succ = reach_fw(edgesOut, pivot);
+            unordered_set<int> pred = reach_bw(edgesIn, pivot);
             vector<int> s1;
             for (int i = 0; i < vertices.size(); i++) {
                 if (succ.count(vertices[i]) > 0 && pred.count(vertices[i]) > 0) {

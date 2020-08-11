@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <vector>
 #include <unordered_set>
@@ -23,47 +25,47 @@ vector<unordered_set<int>> read_graph(string filename, int& n_vertices) {
 
     graph_file >> n_vertices;
     getline(graph_file, line);
-    vector<unordered_set<int>> graph_edges_out(n_vertices);
+    vector<unordered_set<int>> edgesOut(n_vertices);
 
     for (int i = 0; i < n_vertices; i++) {
         getline(graph_file, line);
         stringstream estream(line);
         while (estream >> dest)
-            graph_edges_out[i].insert(dest);
+            edgesOut[i].insert(dest);
     }
 
     graph_file.close();
 
-    return graph_edges_out;
+    return edgesOut;
 }
 
 // Generate the edges entering each vertex from the vector with exiting edges
-vector<unordered_set<int>> reverse_edges(vector<unordered_set<int>>& graph_edges_out) {
-    int n_vertices = graph_edges_out.size();
-    vector<unordered_set<int>> graph_edges_in(n_vertices);
+vector<unordered_set<int>> reverse_edges(vector<unordered_set<int>>& edgesOut) {
+    int n_vertices = edgesOut.size();
+    vector<unordered_set<int>> edgesIn(n_vertices);
 
     for (int i = 0; i < n_vertices; i++) {
-        for (unordered_set<int>::iterator it = graph_edges_out[i].begin(); it != graph_edges_out[i].end(); it++)
-            graph_edges_in[*it].insert(i);
+        for (unordered_set<int>::iterator it = edgesOut[i].begin(); it != edgesOut[i].end(); it++)
+            edgesIn[*it].insert(i);
     }
 
-    return graph_edges_in;
+    return edgesIn;
 }
 
-unordered_set<int> reach_fw_seq(vector<unordered_set<int>>& graph_edges_out, int start) {
+unordered_set<int> reach_fw_seq(vector<unordered_set<int>>& edgesOut, int pivot) {
     unordered_set<int> succ;
     queue<int> toVisit;
     int node;
 
-    succ.insert(start);
-    toVisit.push(start);
+    succ.insert(pivot);
+    toVisit.push(pivot);
 
     while (!toVisit.empty()) {
         node = toVisit.front();
         toVisit.pop();
 
         // BFS
-        for (unordered_set<int>::iterator it = graph_edges_out[node].begin(); it != graph_edges_out[node].end(); it++) {
+        for (unordered_set<int>::iterator it = edgesOut[node].begin(); it != edgesOut[node].end(); it++) {
             if (succ.count(*it) == 0) {
                 succ.insert(*it);
                 toVisit.push(*it);
@@ -74,13 +76,13 @@ unordered_set<int> reach_fw_seq(vector<unordered_set<int>>& graph_edges_out, int
     return succ;
 }
 
-unordered_set<int> reach_fw_par(vector<unordered_set<int>>& graph_edges_out, int start) {
+unordered_set<int> reach_fw_par(vector<unordered_set<int>>& edgesOut, int pivot) {
     unordered_set<int> succ;
     queue<int> toVisit;
     int node;
 
-    succ.insert(start);
-    toVisit.push(start);
+    succ.insert(pivot);
+    toVisit.push(pivot);
 
     while (!toVisit.empty()) {
         node = toVisit.front();
@@ -88,7 +90,7 @@ unordered_set<int> reach_fw_par(vector<unordered_set<int>>& graph_edges_out, int
 
         // BFS in parallel
 #pragma omp parallel
-        for (unordered_set<int>::iterator it = graph_edges_out[node].begin(); it != graph_edges_out[node].end(); it++) {
+        for (unordered_set<int>::iterator it = edgesOut[node].begin(); it != edgesOut[node].end(); it++) {
             if (succ.count(*it) == 0) {
 #pragma omp critical
                 {
@@ -102,20 +104,20 @@ unordered_set<int> reach_fw_par(vector<unordered_set<int>>& graph_edges_out, int
     return succ;
 }
 
-unordered_set<int> reach_bw_seq(vector<unordered_set<int>>& graph_edges_in, int start) {
+unordered_set<int> reach_bw_seq(vector<unordered_set<int>>& edgesIn, int pivot) {
     unordered_set<int> pred;
     queue<int> toVisit;
     int node;
 
-    pred.insert(start);
-    toVisit.push(start);
+    pred.insert(pivot);
+    toVisit.push(pivot);
 
     while (!toVisit.empty()) {
         node = toVisit.front();
         toVisit.pop();
 
         // BFS
-        for (unordered_set<int>::iterator it = graph_edges_in[node].begin(); it != graph_edges_in[node].end(); it++) {
+        for (unordered_set<int>::iterator it = edgesIn[node].begin(); it != edgesIn[node].end(); it++) {
             if (pred.count(*it) == 0) {
                 pred.insert(*it);
                 toVisit.push(*it);
@@ -126,13 +128,13 @@ unordered_set<int> reach_bw_seq(vector<unordered_set<int>>& graph_edges_in, int 
     return pred;
 }
 
-unordered_set<int> reach_bw_par(vector<unordered_set<int>>& graph_edges_in, int start) {
+unordered_set<int> reach_bw_par(vector<unordered_set<int>>& edgesIn, int pivot) {
     unordered_set<int> pred;
     queue<int> toVisit;
     int node;
 
-    pred.insert(start);
-    toVisit.push(start);
+    pred.insert(pivot);
+    toVisit.push(pivot);
 
     while (!toVisit.empty()) {
         node = toVisit.front();
@@ -140,7 +142,7 @@ unordered_set<int> reach_bw_par(vector<unordered_set<int>>& graph_edges_in, int 
 
         // BFS
 #pragma omp parallel
-        for (unordered_set<int>::iterator it = graph_edges_in[node].begin(); it != graph_edges_in[node].end(); it++) {
+        for (unordered_set<int>::iterator it = edgesIn[node].begin(); it != edgesIn[node].end(); it++) {
             if (pred.count(*it) == 0) {
 #pragma omp critical
                 {
@@ -154,8 +156,8 @@ unordered_set<int> reach_bw_par(vector<unordered_set<int>>& graph_edges_in, int 
     return pred;
 }
 
-vector<int> trim_seq(vector<int> vertices, vector<unordered_set<int>>& graph_edges_out,
-    vector<unordered_set<int>>& graph_edges_in, vector<vector<int>>& scc) {
+vector<int> trim_seq(vector<int> vertices, vector<unordered_set<int>>& edgesOut,
+    vector<unordered_set<int>>& edgesIn, vector<vector<int>>& scc) {
     queue<int> forward_trim, backward_trim;
     unordered_set<int> toDelete;
     int vertex;
@@ -163,7 +165,7 @@ vector<int> trim_seq(vector<int> vertices, vector<unordered_set<int>>& graph_edg
     // forward trim
     for (int i = 0; i < vertices.size(); i++) {
         vertex = vertices[i];
-        if (graph_edges_in[vertex].empty()) {
+        if (edgesIn[vertex].empty()) {
             forward_trim.push(vertex);
             toDelete.insert(vertex);
         }
@@ -180,14 +182,14 @@ vector<int> trim_seq(vector<int> vertices, vector<unordered_set<int>>& graph_edg
         scc[scc.size() - 1].push_back(vertex);
 
         // Delete out-edges
-        for (unordered_set<int>::iterator it = graph_edges_out[vertex].begin(); it != graph_edges_out[vertex].end(); it++) {
-            graph_edges_in[*it].erase(vertex);
-            if (graph_edges_in[*it].empty()) {
+        for (unordered_set<int>::iterator it = edgesOut[vertex].begin(); it != edgesOut[vertex].end(); it++) {
+            edgesIn[*it].erase(vertex);
+            if (edgesIn[*it].empty()) {
                 forward_trim.push(*it);
                 toDelete.insert(*it);
             }
         }
-        graph_edges_out[vertex].clear();
+        edgesOut[vertex].clear();
     }
 
     cout << "trimfr size: " << toDelete.size() << endl;
@@ -195,7 +197,7 @@ vector<int> trim_seq(vector<int> vertices, vector<unordered_set<int>>& graph_edg
     // backward trim
     for (int i = 0; i < vertices.size(); i++) {
         vertex = vertices[i];
-        if (graph_edges_out[vertex].empty() && toDelete.count(vertex) == 0) {
+        if (edgesOut[vertex].empty() && toDelete.count(vertex) == 0) {
             backward_trim.push(vertex);
             toDelete.insert(vertex);
         }
@@ -212,14 +214,14 @@ vector<int> trim_seq(vector<int> vertices, vector<unordered_set<int>>& graph_edg
         scc[scc.size() - 1].push_back(vertex);
 
         // Delete out-edges
-        for (unordered_set<int>::iterator it = graph_edges_in[vertex].begin(); it != graph_edges_in[vertex].end(); it++) {
-            graph_edges_out[*it].erase(vertex);
-            if (graph_edges_out[*it].empty()) {
+        for (unordered_set<int>::iterator it = edgesIn[vertex].begin(); it != edgesIn[vertex].end(); it++) {
+            edgesOut[*it].erase(vertex);
+            if (edgesOut[*it].empty()) {
                 backward_trim.push(*it);
                 toDelete.insert(*it);
             }
         }
-        graph_edges_in[vertex].clear();
+        edgesIn[vertex].clear();
     }
     
     cout << "trimbr size: " << toDelete.size() << endl;
@@ -235,8 +237,8 @@ vector<int> trim_seq(vector<int> vertices, vector<unordered_set<int>>& graph_edg
     return new_vertices;
 }
 
-vector<int> trim_par(vector<int> vertices, vector<unordered_set<int>>& graph_edges_out,
-    vector<unordered_set<int>>& graph_edges_in, vector<vector<int>>& scc) {
+vector<int> trim_par(vector<int> vertices, vector<unordered_set<int>>& edgesOut,
+    vector<unordered_set<int>>& edgesIn, vector<vector<int>>& scc) {
     queue<int> forward_trim, backward_trim;
     unordered_set<int> toDelete;
     int vertex;
@@ -245,7 +247,7 @@ vector<int> trim_par(vector<int> vertices, vector<unordered_set<int>>& graph_edg
 #pragma omp parallel for
     for (int i = 0; i < vertices.size(); i++) {
         int v = vertices[i];  // local private to thread
-        if (graph_edges_in[v].empty()) {
+        if (edgesIn[v].empty()) {
 #pragma omp critical
             {
                 forward_trim.push(v);
@@ -265,14 +267,14 @@ vector<int> trim_par(vector<int> vertices, vector<unordered_set<int>>& graph_edg
         scc[scc.size() - 1].push_back(vertex);
 
         // Delete out-edges
-        for (unordered_set<int>::iterator it = graph_edges_out[vertex].begin(); it != graph_edges_out[vertex].end(); it++) {
-            graph_edges_in[*it].erase(vertex);
-            if (graph_edges_in[*it].empty()) {
+        for (unordered_set<int>::iterator it = edgesOut[vertex].begin(); it != edgesOut[vertex].end(); it++) {
+            edgesIn[*it].erase(vertex);
+            if (edgesIn[*it].empty()) {
                     forward_trim.push(*it);
                     toDelete.insert(*it);
             }
         }
-        graph_edges_out[vertex].clear();
+        edgesOut[vertex].clear();
     }
 
     cout << "trimfr size: " << toDelete.size() << endl;
@@ -281,7 +283,7 @@ vector<int> trim_par(vector<int> vertices, vector<unordered_set<int>>& graph_edg
 #pragma omp parallel for
     for (int i = 0; i < vertices.size(); i++) {
         int v = vertices[i];
-        if (graph_edges_out[v].empty() && toDelete.count(v) == 0) {
+        if (edgesOut[v].empty() && toDelete.count(v) == 0) {
 #pragma omp critical
             {
                 backward_trim.push(v);
@@ -301,14 +303,14 @@ vector<int> trim_par(vector<int> vertices, vector<unordered_set<int>>& graph_edg
         scc[scc.size() - 1].push_back(vertex);
 
         // Delete out-edges
-        for (unordered_set<int>::iterator it = graph_edges_in[vertex].begin(); it != graph_edges_in[vertex].end(); it++) {
-            graph_edges_out[*it].erase(vertex);
-            if (graph_edges_out[*it].empty()) {
+        for (unordered_set<int>::iterator it = edgesIn[vertex].begin(); it != edgesIn[vertex].end(); it++) {
+            edgesOut[*it].erase(vertex);
+            if (edgesOut[*it].empty()) {
                     backward_trim.push(*it);
                     toDelete.insert(*it);
             }
         }
-        graph_edges_in[vertex].clear();
+        edgesIn[vertex].clear();
     }
     cout << "trimbr size: " << toDelete.size() << endl;
 
@@ -325,17 +327,17 @@ vector<int> trim_par(vector<int> vertices, vector<unordered_set<int>>& graph_edg
     return new_vertices;
 }
 
-vector<int> trim2_seq(vector<int> vertices, vector<unordered_set<int>>& graph_edges_out,
-    vector<unordered_set<int>>& graph_edges_in, vector<vector<int>>& scc) {
+vector<int> trim2_seq(vector<int> vertices, vector<unordered_set<int>>& edgesOut,
+    vector<unordered_set<int>>& edgesIn, vector<vector<int>>& scc) {
     unordered_set<int> toDelete;
     int vertex_a, vertex_b;
 
     for (int i = 0; i < vertices.size(); i++) {
         vertex_a = vertices[i];
-        if (graph_edges_in[vertex_a].size() == 1) {
-            vertex_b = *graph_edges_in[vertex_a].begin();
-            if (graph_edges_in[vertex_b].size() == 1 &&
-                *graph_edges_in[vertex_b].begin() == vertex_a) {
+        if (edgesIn[vertex_a].size() == 1) {
+            vertex_b = *edgesIn[vertex_a].begin();
+            if (edgesIn[vertex_b].size() == 1 &&
+                *edgesIn[vertex_b].begin() == vertex_a) {
                 // Add to SCC
                 if (toDelete.count(vertex_a) == 0) {
                     scc.push_back(vector<int>());
@@ -347,10 +349,10 @@ vector<int> trim2_seq(vector<int> vertices, vector<unordered_set<int>>& graph_ed
                 
             }
         }
-        if (graph_edges_out[vertex_a].size() == 1) {
-            vertex_b = *graph_edges_out[vertex_a].begin();
-            if (graph_edges_out[vertex_b].size() == 1 &&
-                *graph_edges_out[vertex_b].begin() == vertex_a) {
+        if (edgesOut[vertex_a].size() == 1) {
+            vertex_b = *edgesOut[vertex_a].begin();
+            if (edgesOut[vertex_b].size() == 1 &&
+                *edgesOut[vertex_b].begin() == vertex_a) {
                 // Add to SCC
                 if (toDelete.count(vertex_a) == 0) {
                     scc.push_back(vector<int>());
@@ -377,17 +379,17 @@ vector<int> trim2_seq(vector<int> vertices, vector<unordered_set<int>>& graph_ed
     return new_vertices;
 }
 
-vector<int> trim2_par(vector<int> vertices, vector<unordered_set<int>>& graph_edges_out,
-    vector<unordered_set<int>>& graph_edges_in, vector<vector<int>>& scc) {
+vector<int> trim2_par(vector<int> vertices, vector<unordered_set<int>>& edgesOut,
+    vector<unordered_set<int>>& edgesIn, vector<vector<int>>& scc) {
     unordered_set<int> toDelete;
 
 #pragma omp parallel for
     for (int i = 0; i < vertices.size(); i++) {
         int vertex_a = vertices[i];
-        if (graph_edges_in[vertex_a].size() == 1) {
-            int vertex_b = *graph_edges_in[vertex_a].begin();
-            if (graph_edges_in[vertex_b].size() == 1 &&
-                *graph_edges_in[vertex_b].begin() == vertex_a) {
+        if (edgesIn[vertex_a].size() == 1) {
+            int vertex_b = *edgesIn[vertex_a].begin();
+            if (edgesIn[vertex_b].size() == 1 &&
+                *edgesIn[vertex_b].begin() == vertex_a) {
 #pragma omp critical
                 {
                     // Add to SCC
@@ -401,10 +403,10 @@ vector<int> trim2_par(vector<int> vertices, vector<unordered_set<int>>& graph_ed
                 }
             }
         }
-        if (graph_edges_out[vertex_a].size() == 1) {
-            int vertex_b = *graph_edges_out[vertex_a].begin();
-            if (graph_edges_out[vertex_b].size() == 1 &&
-            *graph_edges_out[vertex_b].begin() == vertex_a) {
+        if (edgesOut[vertex_a].size() == 1) {
+            int vertex_b = *edgesOut[vertex_a].begin();
+            if (edgesOut[vertex_b].size() == 1 &&
+            *edgesOut[vertex_b].begin() == vertex_a) {
 #pragma omp critical
                 {
                     // Add to SCC
@@ -448,7 +450,6 @@ void write_scc(string filename, vector<vector<int>>& scc) {
     std::cout << endl << "Vertices : " << nv << endl << "SCC : " << scc.size() << endl;
 }
 
-
 void print_cc(vector<vector<int>>& cc) {
     int nv = 0;
     for (int i = 0; i < cc.size(); i++) {
@@ -458,7 +459,6 @@ void print_cc(vector<vector<int>>& cc) {
     }
     cout << endl << "Vertices : " << nv << endl << "CC : " << cc.size() << endl;
 }
-
 
 // Function to print the index of an element in a vector
 int get_index(vector<int>& v, int K) {
@@ -478,8 +478,8 @@ int get_index(vector<int>& v, int K) {
     }
 }
 
-vector<vector<int>> wcc_reach_seq(vector<int> vertices, vector<unordered_set<int>>& graph_edges_out,
-    vector<unordered_set<int>>& graph_edges_in) {
+vector<vector<int>> wcc_node_seq(vector<int> vertices, vector<unordered_set<int>>& edgesOut,
+    vector<unordered_set<int>>& edgesIn) {
     vector<vector<int>> wcc;
     int nv = vertices.size();
 
@@ -499,28 +499,26 @@ vector<vector<int>> wcc_reach_seq(vector<int> vertices, vector<unordered_set<int
             continue;
 
         color[i] = i;
-        int start = vertices[i];
+        int pivot = vertices[i];
 
         unordered_set<int> succ, pred;
-        succ = reach_fw_seq(graph_edges_out, start);
-        pred = reach_bw_seq(graph_edges_in, start);
+        succ = reach_fw_seq(edgesOut, pivot);
+        pred = reach_bw_seq(edgesIn, pivot);
 
+        int j, minc;
         for (unordered_set<int>::iterator it = succ.begin(); it != succ.end(); it++) {
-            int index = get_index(vertices, *it);
-            if (index == -1)
+            j = get_index(vertices, *it);
+            if (j == -1)
                 continue;
             // Adjust WCC color to minimum index in component
-            if (color[index] == -1) {
-                color[index] = color[i];
+            if (color[j] == -1) {
+                color[j] = color[i];
             }
-            else if (color[index] <= color[i]) {
-                color[i] = color[index];
+            else {
+                minc = std::min(color[i], color[j]);
+                color[i] = color[j] = minc;
             }
-            else if (color[index] > color[i]) {
-                color[index] = color[i];
-                //cout << "should never be here" << endl;
-            }
-            //cout << "test succ " << i << " " << index << endl;
+            //cout << "test succ " << i << " " << j << endl;
             //for (int k = 0; k < nv; k++) {
             //    cout << color[k] << " ";
             //}
@@ -528,83 +526,19 @@ vector<vector<int>> wcc_reach_seq(vector<int> vertices, vector<unordered_set<int
         }
 
         for (unordered_set<int>::iterator it = pred.begin(); it != pred.end(); it++) {
-            int index = get_index(vertices, *it);
-            if (index == -1)
+            j = get_index(vertices, *it);
+            if (j == -1)
                 continue;
             // Adjust WCC color to minimum index in component
-            if (color[index] == -1) {
-                color[index] = color[i];
+            if (color[j] == -1) {
+                color[j] = color[i];
             }
-            else if (color[index] <= color[i]) {
-                color[i] = color[index];
-            }
-            else if (color[index] > color[i]) {
-                color[index] = color[i];
-                //cout << "should never be here" << endl;
-            }
-        }
-    }
-
-    //for (int i = 0; i < nv; i++) {
-    //    cout << i << " " << color[i] << endl;
-    //}
-
-    int c;
-    vector<int> wcc_colors;
-    for (int i = 0; i < nv; i++) {
-        c = color[i];
-        if (std::count(wcc_colors.begin(), wcc_colors.end(), c)) {
-            int index = get_index(wcc_colors, c);
-            wcc[index].push_back(vertices[i]);
-        }
-        else {
-            wcc_colors.push_back(c);
-            wcc.push_back(vector<int>());
-            wcc[wcc.size() - 1].push_back(vertices[i]);
-        }
-    }
-
-    //print_cc(wcc);
-    cout << "Input size " << vertices.size() << endl;
-    cout << "WCC size: " << wcc.size() << endl;
-    return wcc;
-}
-
-vector<vector<int>> wcc_edge_seq(vector<int> vertices, vector<unordered_set<int>>& graph_edges_out) {
-    vector<vector<int>> wcc;
-    int nv = vertices.size();
-    int old_sum, new_sum, improve;
-
-    if (nv == 0)
-        return wcc;
-    if (nv == 1) {
-        wcc.push_back(vector<int>());
-        wcc[0].push_back(vertices[0]);
-        return wcc;
-    }
-
-    vector<int> color(nv, -1);
-    for (int i = 0; i < nv; i++) {
-        color[i] = i;
-    }
-
-    do {
-        old_sum = accumulate(color.begin(), color.end(), 0);
-        for (int i = 0; i < nv; i++) {
-            int node = vertices[i];
-            for (unordered_set<int>::iterator it = graph_edges_out[node].begin(); it != graph_edges_out[node].end(); it++) {
-                int j = get_index(vertices, *it);
-                if (j == -1)
-                    continue;
-                // Adjust WCC color to minimum of the two at this edge
-                int minc = std::min(color[i], color[j]);
+            else {
+                minc = std::min(color[i], color[j]);
                 color[i] = color[j] = minc;
             }
         }
-        new_sum = accumulate(color.begin(), color.end(), 0);
-        improve = old_sum - new_sum;
-        //cout << "iter " << old_sum << " " << new_sum << endl;
-    } while (improve > 0);
+    }
 
     //for (int i = 0; i < nv; i++) {
     //    cout << i << " " << color[i] << endl;
@@ -626,15 +560,15 @@ vector<vector<int>> wcc_edge_seq(vector<int> vertices, vector<unordered_set<int>
     }
 
     //print_cc(wcc);
-    std::cout << "Input size " << vertices.size() << endl;
-    std::cout << "WCC size: " << wcc.size() << endl;
+    //cout << "Input size " << vertices.size() << endl;
+    //cout << "WCC size: " << wcc.size() << endl;
     return wcc;
 }
 
-vector<vector<int>> wcc_edge_par(vector<int> vertices, vector<unordered_set<int>>& graph_edges_out) {
+vector<vector<int>> wcc_edge_seq(vector<int> vertices, vector<unordered_set<int>>& edgesOut) {
     vector<vector<int>> wcc;
     int nv = vertices.size();
-    int old_sum, new_sum, improve;
+    int oldSum = 0, newSum = 0;
 
     if (nv == 0)
         return wcc;
@@ -649,17 +583,82 @@ vector<vector<int>> wcc_edge_par(vector<int> vertices, vector<unordered_set<int>
         color[i] = i;
     }
 
-    do {
-        old_sum = new_sum = 0;
-        //old_sum = accumulate(color.begin(), color.end(), 0);
-#pragma omp parallel for reduction (+:old_sum)
+    oldSum = accumulate(color.begin(), color.end(), 0);
+    int node, j, minc;
+    int improve = 1;
+    while (improve > 0) {
         for (int i = 0; i < nv; i++) {
-            old_sum += color[i];
+            node = vertices[i];
+            for (unordered_set<int>::iterator it = edgesOut[node].begin(); it != edgesOut[node].end(); it++) {
+                j = get_index(vertices, *it);
+                if (j == -1)
+                    continue;
+                // Adjust WCC color to minimum of the two at this edge
+                minc = std::min(color[i], color[j]);
+                color[i] = color[j] = minc;
+            }
         }
+        newSum = accumulate(color.begin(), color.end(), 0);
+        improve = oldSum - newSum;
+        //cout << "iter " << old_sum << " " << new_sum << endl;
+        oldSum = newSum;
+        newSum = 0;
+    }
+
+    //for (int i = 0; i < nv; i++) {
+    //    cout << i << " " << color[i] << endl;
+    //}
+
+    int c;
+    vector<int> wcc_colors;
+    for (int i = 0; i < nv; i++) {
+        c = color[i];
+        if (std::count(wcc_colors.begin(), wcc_colors.end(), c)) {
+            j = get_index(wcc_colors, c);
+            wcc[j].push_back(vertices[i]);
+        }
+        else {
+            wcc_colors.push_back(c);
+            wcc.push_back(vector<int>());
+            wcc[wcc.size() - 1].push_back(vertices[i]);
+        }
+    }
+
+    //print_cc(wcc);
+    //std::cout << "Input size " << vertices.size() << endl;
+    //std::cout << "WCC size: " << wcc.size() << endl;
+    return wcc;
+}
+
+vector<vector<int>> wcc_edge_par(vector<int> vertices, vector<unordered_set<int>>& edgesOut) {
+    vector<vector<int>> wcc;
+    int nv = vertices.size();
+    int oldSum = 0, newSum = 0;
+
+    if (nv == 0)
+        return wcc;
+    if (nv == 1) {
+        wcc.push_back(vector<int>());
+        wcc[0].push_back(vertices[0]);
+        return wcc;
+    }
+
+    vector<int> color(nv, -1);
+    for (int i = 0; i < nv; i++) {
+        color[i] = i;
+    }
+
+#pragma omp parallel for reduction (+:oldSum)
+    for (int i = 0; i < nv; i++) {
+        oldSum += color[i];
+    }
+
+    int improve = 1;
+    while (improve > 0) {
 #pragma omp parallel for
         for (int i = 0; i < nv; i++) {
             int node = vertices[i];
-            for (unordered_set<int>::iterator it = graph_edges_out[node].begin(); it != graph_edges_out[node].end(); it++) {
+            for (unordered_set<int>::iterator it = edgesOut[node].begin(); it != edgesOut[node].end(); it++) {
                 int j = get_index(vertices, *it);
                 if (j == -1)
                     continue;
@@ -669,14 +668,15 @@ vector<vector<int>> wcc_edge_par(vector<int> vertices, vector<unordered_set<int>
                 color[i] = color[j] = minc;
             }
         }
-        //new_sum = accumulate(color.begin(), color.end(), 0);
-#pragma omp parallel for reduction (+:new_sum)
+#pragma omp parallel for reduction (+:newSum)
         for (int i = 0; i < nv; i++) {
-            new_sum += color[i];
+            newSum += color[i];
         }
-        improve = old_sum - new_sum;
+        improve = oldSum - newSum;
         //cout << "iter " << old_sum << " " << new_sum << endl;
-    } while (improve > 0);
+        oldSum = newSum;
+        newSum = 0;
+    }
 
     //for (int i = 0; i < nv; i++) {
     //    cout << i << " " << color[i] << endl;
@@ -687,8 +687,8 @@ vector<vector<int>> wcc_edge_par(vector<int> vertices, vector<unordered_set<int>
     for (int i = 0; i < nv; i++) {
         c = color[i];
         if (std::count(wcc_colors.begin(), wcc_colors.end(), c)) {
-            int index = get_index(wcc_colors, c);
-            wcc[index].push_back(vertices[i]);
+            int j = get_index(wcc_colors, c);
+            wcc[j].push_back(vertices[i]);
         }
         else {
             wcc_colors.push_back(c);
@@ -698,25 +698,8 @@ vector<vector<int>> wcc_edge_par(vector<int> vertices, vector<unordered_set<int>
     }
 
     //print_cc(wcc);
-    std::cout << "Input size " << vertices.size() << endl;
-    std::cout << "WCC size: " << wcc.size() << endl;
+    //std::cout << "Input size " << vertices.size() << endl;
+    //std::cout << "WCC size: " << wcc.size() << endl;
     return wcc;
 }
 
-void test_wcc(vector<int> vertices, vector<unordered_set<int>>& graph_edges_out,
-    vector<unordered_set<int>>& graph_edges_in) {
-    vector<vector<int>> wcc;
-    clock_t begin_time;
-
-    begin_time = clock();
-    wcc = wcc_reach_seq(vertices, graph_edges_out, graph_edges_in);
-    std::cout << "WCC reach seq time ms: " << float(clock() - begin_time) << endl;
-
-    begin_time = clock();
-    wcc = wcc_edge_seq(vertices, graph_edges_out);
-    std::cout << "WCC edge seq time ms: " << float(clock() - begin_time) << endl;
-
-    begin_time = clock();
-    wcc = wcc_edge_par(vertices, graph_edges_out);
-    std::cout << "WCC edge par time ms: " << float(clock() - begin_time) << endl;
-}

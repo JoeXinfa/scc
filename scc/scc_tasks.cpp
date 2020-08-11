@@ -13,8 +13,8 @@
 
 using namespace std;
 
-void fleischer(vector<int> vertices, vector<unordered_set<int>>& graph_edges_out,
-    vector<unordered_set<int>>& graph_edges_in, vector<vector<int>>& scc,
+void fleischer(vector<int> vertices, vector<unordered_set<int>>& edgesOut,
+    vector<unordered_set<int>>& edgesIn, vector<vector<int>>& scc,
     int rec_height);
 
 int main(int argc, char* argv[]) {
@@ -32,10 +32,10 @@ int main(int argc, char* argv[]) {
     int n_vertices, n1;
     clock_t begin_time;
 
-    vector<unordered_set<int>> graph_edges_out = read_graph(filename, n_vertices);
+    vector<unordered_set<int>> edgesOut = read_graph(filename, n_vertices);
 
     begin_time = clock();
-    vector<unordered_set<int>> graph_edges_in = reverse_edges(graph_edges_out);
+    vector<unordered_set<int>> edgesIn = reverse_edges(edgesOut);
     std::cout << "Flip time ms: " << float(clock() - begin_time) << endl;
 
     vector<int> vertices;
@@ -46,14 +46,14 @@ int main(int argc, char* argv[]) {
 
     n1 = vertices.size();
     begin_time = clock();
-    vertices = trim_par(vertices, graph_edges_out, graph_edges_in, scc);
+    vertices = trim_par(vertices, edgesOut, edgesIn, scc);
     std::cout << "Trim time ms: " << float(clock() - begin_time) << endl;
     std::cout << "Before trim nv: " << n1 << endl;
     std::cout << "After trim nv: " << vertices.size() << endl;
 
     n1 = vertices.size();
     begin_time = clock();
-    vertices = trim2_par(vertices, graph_edges_out, graph_edges_in, scc);
+    vertices = trim2_par(vertices, edgesOut, edgesIn, scc);
     std::cout << "Trim2 time ms: " << float(clock() - begin_time) << endl;
     std::cout << "Before trim2 nv: " << n1 << endl;
     std::cout << "After trim2 nv: " << vertices.size() << endl;
@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
     {
 #pragma omp single
         {
-            fleischer(vertices, graph_edges_out, graph_edges_in, scc, recDepth);
+            fleischer(vertices, edgesOut, edgesIn, scc, recDepth);
         }
     }
 
@@ -75,8 +75,8 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-void fleischer(vector<int> vertices, vector<unordered_set<int>>& graph_edges_out,
-    vector<unordered_set<int>>& graph_edges_in, vector<vector<int>>& scc,
+void fleischer(vector<int> vertices, vector<unordered_set<int>>& edgesOut,
+    vector<unordered_set<int>>& edgesIn, vector<vector<int>>& scc,
     int rec_height) {
     if (vertices.size() == 0)
         return;
@@ -87,15 +87,15 @@ void fleischer(vector<int> vertices, vector<unordered_set<int>>& graph_edges_out
         return;
     }
 
-    //int start = vertices[0];
-    int start = vertices[rand() % vertices.size()];
+    //int pivot = vertices[0];
+    int pivot = vertices[rand() % vertices.size()];
 
     unordered_set<int> succ, pred;
 #pragma omp task default(shared)
-    succ = reach_fw_seq(graph_edges_out, start);
-    //succ = reach_fw_par(graph_edges_out, start);  // slower than seq
+    succ = reach_fw_seq(edgesOut, pivot);
+    //succ = reach_fw_par(edgesOut, pivot);  // slower than seq
 #pragma omp task default(shared)
-    pred = reach_bw_seq(graph_edges_in, start);
+    pred = reach_bw_seq(edgesIn, pivot);
 #pragma omp taskwait
 
     vector<int> s1, s2, s3, s4;
@@ -120,44 +120,94 @@ void fleischer(vector<int> vertices, vector<unordered_set<int>>& graph_edges_out
         << " " << s3.size() << " " << s4.size() << " " << rec_height << endl;
 
     //int s4old = s4.size();
-    //s4 = trim(s4, graph_edges_out, graph_edges_in, scc);
+    //s4 = trim(s4, edgesOut, edgesIn, scc);
     //int s4new = s4.size();
     //cout << "before/after trim: " << s4old << " " << s4new << endl;
 
-    /*
     if (rec_height > 0) {
         rec_height -= 1;
 #pragma omp task default(shared)
-        fleischer(s2, graph_edges_out, graph_edges_in, scc, rec_height);
+        fleischer(s2, edgesOut, edgesIn, scc, rec_height);
 #pragma omp task default(shared)
-        fleischer(s3, graph_edges_out, graph_edges_in, scc, rec_height);
+        fleischer(s3, edgesOut, edgesIn, scc, rec_height);
 #pragma omp task default(shared)
-        fleischer(s4, graph_edges_out, graph_edges_in, scc, rec_height);
+        fleischer(s4, edgesOut, edgesIn, scc, rec_height);
 #pragma omp taskwait
     }
     else {
-        fleischer(s2, graph_edges_out, graph_edges_in, scc, rec_height);
-        fleischer(s3, graph_edges_out, graph_edges_in, scc, rec_height);
-        fleischer(s4, graph_edges_out, graph_edges_in, scc, rec_height);
+        fleischer(s2, edgesOut, edgesIn, scc, rec_height);
+        fleischer(s3, edgesOut, edgesIn, scc, rec_height);
+        fleischer(s4, edgesOut, edgesIn, scc, rec_height);
+    }
+
+    // More tasks for parallel by WCC
+    /*
+    vector<vector<int>> wcc;
+    wcc = wcc_edge_par(s2, edgesOut);
+#pragma omp parallel for
+    for (int i = 0; i < wcc.size(); i++) {
+        fleischer(wcc[i], edgesOut, edgesIn, scc, rec_height);
+    }
+    wcc = wcc_edge_par(s3, edgesOut);
+#pragma omp parallel for
+    for (int i = 0; i < wcc.size(); i++) {
+        fleischer(wcc[i], edgesOut, edgesIn, scc, rec_height);
+    }
+    wcc = wcc_edge_par(s4, edgesOut);
+#pragma omp parallel for
+    for (int i = 0; i < wcc.size(); i++) {
+        fleischer(wcc[i], edgesOut, edgesIn, scc, rec_height);
     }
     */
 
-    // More tasks for parallel by WCC
-    vector<vector<int>> wcc;
-    wcc = wcc_edge_par(s2, graph_edges_out);
-#pragma omp parallel for
-    for (int i = 0; i < wcc.size(); i++) {
-        fleischer(wcc[i], graph_edges_out, graph_edges_in, scc, rec_height);
-    }
-    wcc = wcc_edge_par(s3, graph_edges_out);
-#pragma omp parallel for
-    for (int i = 0; i < wcc.size(); i++) {
-        fleischer(wcc[i], graph_edges_out, graph_edges_in, scc, rec_height);
-    }
-    wcc = wcc_edge_par(s4, graph_edges_out);
-#pragma omp parallel for
-    for (int i = 0; i < wcc.size(); i++) {
-        fleischer(wcc[i], graph_edges_out, graph_edges_in, scc, rec_height);
-    }
-
 }
+
+
+/*
+Without WCC
+$ ./sccp.exe twitter.rgraph
+recDepth: 3
+Flip time ms: 1586
+trimf1 size: 1
+trimfr size: 2
+trimb1 size: 11210
+trimbr size: 11735
+Trim time ms: 140
+Before trim nv: 81306
+After trim nv: 69571
+trim2 size: 523
+SCC size: 11998
+Trim2 time ms: 31
+Before trim2 nv: 69571
+After trim2 nv: 69048
+Thread ID: 2 68413 635 0 0 3
+Thread ID: 2 1 3 0 631 2
+Thread ID: 4 3 0 0 0 1
+Thread ID: 7 8 0 4 619 1
+Thread ID: 7 14 0 21 584 0
+Thread ID: 0 1 0 0 3 0
+Thread ID: 0 1 0 0 2 0
+Thread ID: 7 20 0 1 0 0
+Thread ID: 0 1 0 0 1 0
+Thread ID: 7 1 0 0 583 0
+Thread ID: 7 1 5 0 577 0
+Thread ID: 7 5 0 0 0 0
+Thread ID: 7 1 3 0 573 0
+Thread ID: 7 3 0 0 0 0
+Thread ID: 7 53 0 2 518 0
+Thread ID: 7 1 0 0 1 0
+Thread ID: 7 1 0 0 517 0
+Thread ID: 7 1 0 0 516 0
+Thread ID: 7 3 0 0 513 0
+Thread ID: 7 3 0 0 510 0
+Thread ID: 7 1 0 0 509 0
+Thread ID: 7 1 0 0 508 0
+Thread ID: 7 1 0 0 507 0
+Thread ID: 7 73 0 0 434 0
+Thread ID: 7 1 0 1 432 0
+Thread ID: 7 1 0 0 431 0
+Thread ID: 7 3 0 0 428 0
+Thread ID: 7 7 0 1 420 0
+Thread ID: 7 3 0 0 417 0
+
+*/
