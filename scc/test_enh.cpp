@@ -431,8 +431,20 @@ void test_dc6(string filename) {
     std::cout << "SCC6 size: " << scc.size() << endl;
 }
 
+void test_dc6_mt(string filename) {
+    omp_set_num_threads(8);
+    test_dc6(filename);
+    omp_set_num_threads(4);
+    test_dc6(filename);
+    omp_set_num_threads(2);
+    test_dc6(filename);
+}
+
 int main(int argc, char* argv[]) {
     string filename = argv[1];
+    test_dc6(filename);
+    /*
+    test_dc6_mt(filename);
     test_dc6(filename);
     cout << "---------------------------------" << endl;
     test_dc5(filename);
@@ -448,6 +460,7 @@ int main(int argc, char* argv[]) {
     //cout << "---------------------------------" << endl;
     test_seq(filename);
     cout << "---------------------------------" << endl;
+    */
 }
 
 /*
