@@ -141,6 +141,10 @@ void scc_dc5(vector<int> vertices, vector<unordered_set<int>>& edgesOut,
 
     scc.push_back(s1);
 
+    int ID = omp_get_thread_num();
+    cout << "Thread ID: " << ID << " " << s1.size() << " " << s2.size() \
+        << " " << s3.size() << " " << s4.size() << " " << rec_height << endl;
+
     if (rec_height > 0) {
         rec_height -= 1;
 #pragma omp task default(shared)
@@ -193,6 +197,10 @@ void scc_dc6(vector<int> vertices, vector<unordered_set<int>>& edgesOut,
     }
 
     scc.push_back(s1);
+
+    int ID = omp_get_thread_num();
+    cout << "Thread ID: " << ID << " " << s1.size() << " " << s2.size() \
+        << " " << s3.size() << " " << s4.size() << endl;
 
     // More tasks for parallel by WCC
     vector<vector<int>> wcc;
@@ -442,13 +450,12 @@ void test_dc6_mt(string filename) {
 
 int main(int argc, char* argv[]) {
     string filename = argv[1];
-    test_dc6(filename);
-    /*
-    test_dc6_mt(filename);
+    //test_dc6_mt(filename);
     test_dc6(filename);
     cout << "---------------------------------" << endl;
     test_dc5(filename);
     cout << "---------------------------------" << endl;
+    /*
     test_dc4(filename);
     cout << "---------------------------------" << endl;
     test_dc3(filename);
@@ -456,8 +463,8 @@ int main(int argc, char* argv[]) {
     test_dc2(filename);
     cout << "---------------------------------" << endl;
     // memory use goes high and may die, too many recursions?
-    //test_dc1(filename);
-    //cout << "---------------------------------" << endl;
+    test_dc1(filename);
+    cout << "---------------------------------" << endl;
     test_seq(filename);
     cout << "---------------------------------" << endl;
     */

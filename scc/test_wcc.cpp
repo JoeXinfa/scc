@@ -10,7 +10,7 @@ void test_wcc(vector<int> vertices, vector<unordered_set<int>>& edgesOut,
 
     begin_time = clock();
     wcc = wcc_node_seq(vertices, edgesOut, edgesIn);
-    std::cout << "WCC reach seq time ms: " << float(clock() - begin_time) << endl;
+    std::cout << "WCC node seq time ms: " << float(clock() - begin_time) << endl;
     std::cout << "Input size " << vertices.size() << endl;
     std::cout << "WCC size: " << wcc.size() << endl;
 
@@ -38,8 +38,11 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < n_vertices; i++)
         vertices.push_back(i);
     
-    //test_wcc(vertices, edgesOut, edgesIn);
-    //return 0;
+    string wikifn = "wikivote.rgraph";
+    if (filename == wikifn) {
+        test_wcc(vertices, edgesOut, edgesIn);
+        return 0;
+    }
 
     vector<vector<int>> scc;
 
